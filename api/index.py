@@ -8,10 +8,9 @@ import os, hashlib, secrets, hmac, time, uuid
 from datetime import datetime, timedelta
 import json
 
-# redirect_slashes=False mencegah konflik routing antara Vercel dan FastAPI
+# redirect_slashes=False sangat penting untuk Vercel
 app = FastAPI(redirect_slashes=False)
 
-# ... (Handler error dan fungsi utilitas tetap sama) ...
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
     if isinstance(exc.detail, dict) and "success" in exc.detail:
@@ -116,7 +115,7 @@ def api_error(status_code, code, message):
     })
 
 # ==========================================
-# RUTE API (Mendukung WITH & WITHOUT TRAILING SLASH)
+# RUTE API LENGKAP (Mendukung Trailing Slash)
 # ==========================================
 
 @app.get("/api/health")
@@ -128,6 +127,16 @@ def health():
         return api_success({"status": "operational", "services": {"api": "operational", "database": "operational", "auth": "operational"}, "response_time": int((time.time() - start) * 1000)})
     except Exception as e:
         return api_error(500, "DB_ERROR", f"Database unavailable: {str(e)}")
+
+@app.get("/api/public-stats")
+@app.get("/api/public-stats/")
+def public_stats():
+    conn = get_db(); cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute("SELECT COUNT(*) as c FROM api_usage"); req = cur.fetchone()["c"]
+    cur.execute("SELECT COALESCE(AVG(response_time),0) as ms FROM api_usage"); avg = cur.fetchone()["ms"]
+    cur.execute("SELECT COUNT(*) as c FROM users"); users = cur.fetchone()["c"]
+    cur.close(); conn.close()
+    return api_success({"total_requests": req, "avg_response_time": int(avg), "total_users": users, "total_endpoints": 7})
 
 @app.post("/api/auth/register")
 @app.post("/api/auth/register/")
@@ -162,8 +171,16 @@ def login(body: AuthLogin, response: Response):
     response.set_cookie(key="session", value=token, httponly=True, samesite="lax", max_age=7*24*3600, secure=True)
     return api_success({"user": {"id": str(user["id"]), "username": user["username"], "email": user["email"]}}, "Login berhasil")
 
-# (Rute lainnya seperti /api/stats, /api/keys, dll. juga bisa ditambahkan kedua dekoratornya jika perlu)
-# ...
+@app.post("/api/auth/logout")
+@app.post("/api/auth/logout/")
+def logout(request: Request, response: Response):
+    token = request.cookies.get("session")
+    if token:
+        conn = get_db(); cur = conn.cursor()
+        cur.execute("DELETE FROM sessions WHERE token_hash = %s", (hash_token(token),))
+        cur.close(); conn.close()
+    response.delete_cookie("session")
+    return api_success({}, "Logged out")
 
 @app.get("/api/auth/me")
 @app.get("/api/auth/me/")
@@ -171,4 +188,78 @@ def me(user: dict = Depends(get_session_user)):
     if not user: return api_error(401, "UNAUTHORIZED", "Not logged in")
     return api_success({"user": {k: str(v) if k == "id" else v for k, v in user.items()}})
 
-# ... (Sisa kode rute lainnya tetap sama) ...
+@app.get("/api/stats")
+@app.get("/api/stats/")
+def stats(user: dict = Depends(get_session_user)):
+    if not user: return api_error(401, "UNAUTHORIZED", "Not logged in")
+    conn = get_db(); cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute("SELECT COUNT(*) as c FROM api_usage WHERE user_id = %s", (user["id"],)); total = cur.fetchone()["c"]
+    cur.execute("SELECT COUNT(*) as c FROM api_usage WHERE user_id = %s AND status_code < 400", (user["id"],)); succ = cur.fetchone()["c"]
+    cur.execute("SELECT COUNT(*) as c FROM api_usage WHERE user_id = %s AND status_code >= 400", (user["id"],)); fail = cur.fetchone()["c"]
+    cur.execute("SELECT COALESCE(AVG(response_time),0) as ms FROM api_usage WHERE user_id = %s", (user["id"],)); avg = cur.fetchone()["ms"]
+    cur.execute("SELECT COUNT(*) as total, COALESCE(SUM(quota_limit - requests_used), 0) as rem, COUNT(*) FILTER (WHERE status = 'active') as act FROM api_keys WHERE user_id = %s", (user["id"],)); keys = cur.fetchone()
+    cur.close(); conn.close()
+    return api_success({"total_requests": total, "successful_requests": succ, "failed_requests": fail, "avg_response_time": int(avg), "keys_total": keys["total"], "keys_active": keys["act"], "remaining_quota": keys["rem"], "chart": []})
+
+@app.get("/api/keys")
+@app.get("/api/keys/")
+def get_keys(user: dict = Depends(get_session_user)):
+    if not user: return api_error(401, "UNAUTHORIZED", "Not logged in")
+    conn = get_db(); cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute("SELECT id, key_prefix, status, quota_limit, requests_used, expires_at, created_at FROM api_keys WHERE user_id = %s ORDER BY created_at DESC", (user["id"],))
+    keys = cur.fetchall()
+    cur.close(); conn.close()
+    for k in keys:
+        k["id"] = str(k["id"])
+        k["created_at"] = k["created_at"].isoformat()
+        if k["expires_at"]: k["expires_at"] = k["expires_at"].isoformat()
+    return api_success({"keys": keys})
+
+@app.post("/api/keys")
+@app.post("/api/keys/")
+def create_key(user: dict = Depends(get_session_user)):
+    if not user: return api_error(401, "UNAUTHORIZED", "Not logged in")
+    conn = get_db(); cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute("SELECT COUNT(*) as c FROM api_keys WHERE user_id = %s", (user["id"],))
+    if cur.fetchone()["c"] >= 5:
+        cur.close(); conn.close(); return api_error(409, "LIMIT_REACHED", "Max 5 keys")
+    raw_key = generate_api_key()
+    cur.execute("INSERT INTO api_keys (user_id, key_prefix, key_hash) VALUES (%s, %s, %s) RETURNING id, key_prefix", (user["id"], raw_key[:12], hash_api_key(raw_key)))
+    new_key = cur.fetchone()
+    new_key["id"] = str(new_key["id"])
+    cur.close(); conn.close()
+    return api_success({"key": new_key, "api_key": raw_key}, "API key created", 201)
+
+@app.post("/api/keys/{key_id}/revoke")
+@app.post("/api/keys/{key_id}/revoke/")
+def revoke_key(key_id: str, user: dict = Depends(get_session_user)):
+    if not user: return api_error(401, "UNAUTHORIZED", "Not logged in")
+    conn = get_db(); cur = conn.cursor()
+    cur.execute("UPDATE api_keys SET status = 'revoked' WHERE id = %s AND user_id = %s RETURNING id", (key_id, user["id"]))
+    updated = cur.fetchone()
+    cur.close(); conn.close()
+    if not updated: return api_error(404, "NOT_FOUND", "Key not found")
+    return api_success({}, "Key revoked")
+
+@app.get("/api/v1/users")
+@app.get("/api/v1/users/")
+def v1_get_users(api_key: dict = Depends(require_api_key)):
+    conn = get_db(); cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute("SELECT id, name, email, created_at FROM demo_users WHERE owner_user_id = %s", (api_key["user_id"],))
+    users = cur.fetchall()
+    cur.close(); conn.close()
+    for u in users:
+        u["id"] = str(u["id"])
+        u["created_at"] = u["created_at"].isoformat()
+    return api_success({"users": users, "count": len(users)})
+
+@app.post("/api/v1/users")
+@app.post("/api/v1/users/")
+def v1_create_user(body: UserCreate, api_key: dict = Depends(require_api_key)):
+    conn = get_db(); cur = conn.cursor(cursor_factory=RealDictCursor)
+    cur.execute("INSERT INTO demo_users (owner_user_id, name, email) VALUES (%s, %s, %s) RETURNING id, name, email, created_at", (api_key["user_id"], body.name, body.email))
+    new_user = cur.fetchone()
+    new_user["id"] = str(new_user["id"])
+    new_user["created_at"] = new_user["created_at"].isoformat()
+    cur.close(); conn.close()
+    return api_success({"user": new_user}, "User created", 201)
