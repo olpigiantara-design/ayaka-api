@@ -143,17 +143,11 @@ async function handleAuthSubmit(e) {
 }
 
 async function checkAuthState() {
-    try {
-        const res = await fetch('/api/auth/me');
-        const data = await res.json();
-        if (data.success) {
-            document.getElementById('nav-auth-btn').classList.add('hidden');
-            document.getElementById('nav-dash-btn').classList.remove('hidden');
-        } else {
-            document.getElementById('nav-auth-btn').classList.remove('hidden');
-            document.getElementById('nav-dash-btn').classList.add('hidden');
-        }
-    } catch (e) { console.log(e); }
+    // SEMENTARA: Sembunyikan menu Login & Dashboard sesuai permintaan
+    const authBtn = document.getElementById('nav-auth-btn');
+    const dashBtn = document.getElementById('nav-dash-btn');
+    if (authBtn) authBtn.classList.add('hidden');
+    if (dashBtn) dashBtn.classList.add('hidden');
 }
 
 async function logout() {
