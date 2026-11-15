@@ -110,8 +110,8 @@ def api_error(status_code, code, message):
     })
 
 # ==== ROUTES: HEALTH & PUBLIC ====
-@app.get("/api/health")
-@app.get("/api/v1/health")
+@app.get("/health")
+@app.get("/v1/health")
 def health():
     start = time.time()
     try:
@@ -120,7 +120,7 @@ def health():
     except:
         return api_error(500, "DB_ERROR", "Database unavailable")
 
-@app.get("/api/public-stats")
+@app.get("/public-stats")
 def public_stats():
     conn = get_db(); cur = conn.cursor(cursor_factory=RealDictCursor)
     cur.execute("SELECT COUNT(*) as c FROM api_usage"); req = cur.fetchone()["c"]
@@ -130,7 +130,7 @@ def public_stats():
     return api_success({"total_requests": req, "avg_response_time": int(avg), "total_users": users, "total_endpoints": 7})
 
 # ==== ROUTES: AUTH ====
-@app.post("/api/auth/register")
+@app.post("/auth/register")
 def register(body: AuthRegister):
     conn = get_db(); cur = conn.cursor()
     cur.execute("SELECT 1 FROM users WHERE username = %s OR email = %s", (body.username, body.email))
@@ -146,7 +146,7 @@ def register(body: AuthRegister):
     finally:
         cur.close(); conn.close()
 
-@app.post("/api/auth/login")
+@app.post("/auth/login")
 def login(body: AuthLogin, response: Response):
     conn = get_db(); cur = conn.cursor(cursor_factory=RealDictCursor)
     cur.execute("SELECT * FROM users WHERE username = %s OR email = %s", (body.identifier, body.identifier))
@@ -163,7 +163,7 @@ def login(body: AuthLogin, response: Response):
     response.set_cookie(key="session", value=token, httponly=True, samesite="lax", max_age=7*24*3600, secure=os.environ.get("NODE_ENV")=="production")
     return api_success({"user": {"id": user["id"], "username": user["username"], "email": user["email"]}}, "Login successful")
 
-@app.post("/api/auth/logout")
+@app.post("/auth/logout")
 def logout(request: Request, response: Response):
     token = request.cookies.get("session")
     if token:
@@ -173,13 +173,13 @@ def logout(request: Request, response: Response):
     response.delete_cookie("session")
     return api_success({}, "Logged out")
 
-@app.get("/api/auth/me")
+@app.get("/auth/me")
 def me(user: dict = Depends(get_session_user)):
     if not user: return api_error(401, "UNAUTHORIZED", "Not logged in")
     return api_success({"user": user})
 
 # ==== ROUTES: DASHBOARD STATS ====
-@app.get("/api/stats")
+@app.get("/stats")
 def stats(user: dict = Depends(get_session_user)):
     if not user: return api_error(401, "UNAUTHORIZED", "Not logged in")
     conn = get_db(); cur = conn.cursor(cursor_factory=RealDictCursor)
@@ -198,7 +198,7 @@ def stats(user: dict = Depends(get_session_user)):
     })
 
 # ==== ROUTES: API KEYS ====
-@app.get("/api/keys")
+@app.get("/keys")
 def get_keys(user: dict = Depends(get_session_user)):
     if not user: return api_error(401, "UNAUTHORIZED", "Not logged in")
     conn = get_db(); cur = conn.cursor(cursor_factory=RealDictCursor)
@@ -207,7 +207,7 @@ def get_keys(user: dict = Depends(get_session_user)):
     cur.close(); conn.close()
     return api_success({"keys": keys})
 
-@app.post("/api/keys")
+@app.post("/keys")
 def create_key(user: dict = Depends(get_session_user)):
     if not user: return api_error(401, "UNAUTHORIZED", "Not logged in")
     conn = get_db(); cur = conn.cursor(cursor_factory=RealDictCursor)
@@ -222,7 +222,7 @@ def create_key(user: dict = Depends(get_session_user)):
     return api_success({"key": new_key, "api_key": raw_key}, "API key created", 201)
 
 # ==== ROUTES: V1 USERS (PROTECTED) ====
-@app.get("/api/v1/users")
+@app.get("/v1/users")
 def v1_get_users(api_key: dict = Depends(require_api_key)):
     conn = get_db(); cur = conn.cursor(cursor_factory=RealDictCursor)
     cur.execute("SELECT id, name, email, created_at FROM demo_users WHERE owner_user_id = %s", (api_key["user_id"],))
@@ -230,7 +230,7 @@ def v1_get_users(api_key: dict = Depends(require_api_key)):
     cur.close(); conn.close()
     return api_success({"users": users, "count": len(users)})
 
-@app.post("/api/v1/users")
+@app.post("/v1/users")
 def v1_create_user(body: UserCreate, api_key: dict = Depends(require_api_key)):
     conn = get_db(); cur = conn.cursor(cursor_factory=RealDictCursor)
     cur.execute("INSERT INTO demo_users (owner_user_id, name, email) VALUES (%s, %s, %s) RETURNING id, name, email, created_at", 
