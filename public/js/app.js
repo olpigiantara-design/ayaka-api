@@ -1,6 +1,4 @@
-// Initialize Lucide Icons
 lucide.createIcons();
-
 let authMode = 'login';
 
 function switchTab(tabId) {
@@ -29,13 +27,45 @@ function toggleMobileMenu() {
     }
 }
 
+// ==== AUTHENTICATION ====
 function openAuthModal(mode) {
     authMode = mode;
+    updateAuthModalUI();
     document.getElementById('auth-modal').classList.remove('hidden');
-    document.getElementById('auth-modal-title').textContent = mode === 'login' ? 'Login to AYAKA API' : 'Create Account';
-    document.getElementById('auth-submit-btn').textContent = mode === 'login' ? 'Login' : 'Register';
-    const emailInput = document.getElementById('auth-email');
-    emailInput.placeholder = mode === 'login' ? "username or email" : "username";
+}
+
+function toggleAuthMode() {
+    authMode = authMode === 'login' ? 'register' : 'login';
+    updateAuthModalUI();
+}
+
+function updateAuthModalUI() {
+    const title = document.getElementById('auth-modal-title');
+    const submitBtn = document.getElementById('auth-submit-btn');
+    const switchBtn = document.getElementById('auth-switch-btn');
+    const groupUsername = document.getElementById('auth-group-username');
+    const labelEmail = document.getElementById('auth-label-email');
+    const inputEmail = document.getElementById('auth-email');
+    const errEl = document.getElementById('auth-error');
+    errEl.classList.add('hidden');
+
+    if (authMode === 'login') {
+        title.textContent = 'Login to AYAKA API';
+        submitBtn.textContent = 'Login';
+        switchBtn.textContent = 'Belum punya akun? Register';
+        groupUsername.classList.add('hidden');
+        labelEmail.textContent = 'Username / Email';
+        inputEmail.type = 'text';
+        inputEmail.placeholder = 'username atau email';
+    } else {
+        title.textContent = 'Create Account';
+        submitBtn.textContent = 'Register';
+        switchBtn.textContent = 'Sudah punya akun? Login';
+        groupUsername.classList.remove('hidden');
+        labelEmail.textContent = 'Email';
+        inputEmail.type = 'email';
+        inputEmail.placeholder = 'email@example.com';
+    }
 }
 
 function closeAuthModal() {
@@ -48,15 +78,30 @@ async function handleAuthSubmit(e) {
     e.preventDefault();
     const btn = document.getElementById('auth-submit-btn');
     const errEl = document.getElementById('auth-error');
+    
     const identifier = document.getElementById('auth-email').value;
     const password = document.getElementById('auth-password').value;
+    const username = document.getElementById('auth-username').value;
 
     errEl.classList.add('hidden');
     btn.textContent = 'Processing...';
     btn.disabled = true;
 
     let endpoint = authMode === 'login' ? '/api/auth/login' : '/api/auth/register';
-    let payload = authMode === 'login' ? { identifier, password } : { username: identifier, email: identifier + '@ayaka.com', password };
+    let payload;
+    
+    if (authMode === 'login') {
+        payload = { identifier, password };
+    } else {
+        if (!username) {
+            errEl.textContent = 'Username wajib diisi';
+            errEl.classList.remove('hidden');
+            btn.textContent = 'Register';
+            btn.disabled = false;
+            return;
+        }
+        payload = { username, email: identifier, password };
+    }
 
     try {
         const res = await fetch(endpoint, {
@@ -69,16 +114,20 @@ async function handleAuthSubmit(e) {
         if (data.success) {
             if (authMode === 'register') {
                 alert('Registrasi berhasil! Silakan login.');
-                openAuthModal('login');
+                toggleAuthMode();
             } else {
                 window.location.reload();
             }
         } else {
-            errEl.textContent = data.message || 'Terjadi kesalahan';
+            let errorMsg = data.message;
+            if (!errorMsg && data.detail) {
+                errorMsg = typeof data.detail === 'string' ? data.detail : data.detail.message;
+            }
+            errEl.textContent = errorMsg || 'Terjadi kesalahan sistem';
             errEl.classList.remove('hidden');
         }
     } catch (err) {
-        errEl.textContent = 'Network error';
+        errEl.textContent = 'Network Error: ' + err.message;
         errEl.classList.remove('hidden');
     }
 
@@ -105,15 +154,14 @@ async function logout() {
     window.location.reload();
 }
 
+// ==== DASHBOARD ====
 async function loadDashboardData() {
-    // Selalu tampilkan konten dashboard agar desain terlihat
     document.getElementById('dash-content').classList.remove('hidden');
     document.getElementById('dash-not-logged').classList.add('hidden');
 
     try {
         const meRes = await fetch('/api/auth/me');
         const me = await meRes.json();
-        
         if (me.success) {
             document.getElementById('dash-username').textContent = me.data.user.username;
         } else {
@@ -129,7 +177,6 @@ async function loadDashboardData() {
             document.getElementById('stat-failed-req').textContent = stats.data.failed_requests.toLocaleString();
             document.getElementById('stat-active-keys').textContent = stats.data.keys_active;
         } else {
-            // Jika gagal / belum login, tampilkan angka default seperti di screenshot
             document.getElementById('stat-quota').innerHTML = `9,420 <span class="text-xl text-gray-500 font-bold">/ 10k</span>`;
             document.getElementById('stat-success-req').textContent = '1,280';
             document.getElementById('stat-failed-req').textContent = '12';
@@ -152,7 +199,6 @@ async function loadDashboardData() {
                 `;
             });
         } else {
-            // Jika belum ada key, tampilkan dummy seperti di screenshot
             tbody.innerHTML = `
                 <tr>
                     <td class="p-4 border-r-2 border-ayakaBorder font-mono font-bold text-sm text-gray-500">AYK_8f49...2a1b</td>
@@ -180,6 +226,7 @@ async function generateApiKey() {
     btn.disabled = false;
 }
 
+// ==== EXPLORER ====
 async function runApiExplorer() {
     const method = document.getElementById('explorer-method').value;
     const url = document.getElementById('explorer-url').value;
@@ -220,6 +267,7 @@ async function runApiExplorer() {
     btn.disabled = false;
 }
 
+// ==== STATUS ====
 async function checkStatus() {
     try {
         const res = await fetch('/api/health');
