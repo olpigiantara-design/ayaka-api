@@ -8,8 +8,15 @@ import os, hashlib, secrets, hmac, time, uuid
 from datetime import datetime, timedelta
 import json
 
-# redirect_slashes=False mencegah Vercel kebingungan dengan trailing slash
 app = FastAPI(redirect_slashes=False)
+
+# --- JARING PENGAMAN GLOBAL: Menangkap semua error agar selalu balas JSON ---
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(status_code=500, content={
+        "success": False, "message": f"Global Server Error: {str(exc)}", "error": {"code": "INTERNAL_SERVER_ERROR"},
+        "meta": {"timestamp": datetime.utcnow().isoformat() + "Z", "requestId": "req_" + secrets.token_hex(4)}
+    })
 
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
@@ -26,9 +33,9 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         "success": False, "message": "Validation Error", "error": {"code": "VALIDATION_ERROR", "details": exc.errors()},
         "meta": {"timestamp": datetime.utcnow().isoformat() + "Z", "requestId": "req_" + secrets.token_hex(4)}
     })
+# -----------------------------------------------------------------------------
 
 def get_db():
-    # Fungsi ini akan throw error jika DATABASE_URL salah/kosong
     conn = psycopg2.connect(os.environ["DATABASE_URL"])
     conn.autocommit = True
     return conn
@@ -124,7 +131,7 @@ def api_error(status_code, code, message):
     })
 
 # ==========================================
-# RUTE API (Format: /api/...)
+# RUTE API
 # ==========================================
 
 @app.get("/api/health")
