@@ -109,7 +109,17 @@ async function handleAuthSubmit(e) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-        const data = await res.json();
+        
+        // Baca text mentah terlebih dahulu
+        const textData = await res.text();
+        let data;
+        try {
+            // Coba ubah ke JSON
+            data = JSON.parse(textData);
+        } catch (err) {
+            // Jika gagal (karena server return HTML error), tampilkan potongannya
+            data = { success: false, message: "Server Error (Crash): " + textData.substring(0, 150) };
+        }
 
         if (data.success) {
             if (authMode === 'register') {
