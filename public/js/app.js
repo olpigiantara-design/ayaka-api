@@ -110,15 +110,13 @@ async function handleAuthSubmit(e) {
             body: JSON.stringify(payload)
         });
         
-        // Baca text mentah terlebih dahulu
         const textData = await res.text();
         let data;
         try {
-            // Coba ubah ke JSON
             data = JSON.parse(textData);
         } catch (err) {
-            // Jika gagal (karena server return HTML error), tampilkan potongannya
-            data = { success: false, message: "Server Error (Crash): " + textData.substring(0, 150) };
+            // Jika server crash dan mengembalikan HTML (bukan JSON)
+            data = { success: false, message: "SERVER CRASH. Cek Log Vercel! (" + textData.substring(0, 80) + ")" };
         }
 
         if (data.success) {
