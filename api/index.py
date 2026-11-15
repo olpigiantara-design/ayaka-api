@@ -10,7 +10,6 @@ import json
 
 app = FastAPI(redirect_slashes=False)
 
-# --- JARING PENGAMAN GLOBAL: Menangkap semua error agar selalu balas JSON ---
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
     return JSONResponse(status_code=500, content={
@@ -33,7 +32,6 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         "success": False, "message": "Validation Error", "error": {"code": "VALIDATION_ERROR", "details": exc.errors()},
         "meta": {"timestamp": datetime.utcnow().isoformat() + "Z", "requestId": "req_" + secrets.token_hex(4)}
     })
-# -----------------------------------------------------------------------------
 
 def get_db():
     conn = psycopg2.connect(os.environ["DATABASE_URL"])
@@ -129,10 +127,6 @@ def api_error(status_code, code, message):
         "success": False, "message": message, "error": {"code": code},
         "meta": {"timestamp": datetime.utcnow().isoformat() + "Z", "requestId": "req_" + secrets.token_hex(4)}
     })
-
-# ==========================================
-# RUTE API
-# ==========================================
 
 @app.get("/api/health")
 @app.get("/api/health/")
@@ -306,3 +300,6 @@ def v1_create_user(body: UserCreate, api_key: dict = Depends(require_api_key)):
         return api_success({"user": new_user}, "User created", 201)
     except Exception as e:
         return api_error(500, "DB_ERROR", str(e))
+
+# Vercel needs this variable
+handler = app
