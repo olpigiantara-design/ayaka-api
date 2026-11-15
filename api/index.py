@@ -8,6 +8,7 @@ import os, hashlib, secrets, hmac, time, uuid
 from datetime import datetime, timedelta
 import json
 
+# redirect_slashes=False mencegah Vercel kebingungan dengan trailing slash
 app = FastAPI(redirect_slashes=False)
 
 @app.exception_handler(HTTPException)
@@ -27,6 +28,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
     })
 
 def get_db():
+    # Fungsi ini akan throw error jika DATABASE_URL salah/kosong
     conn = psycopg2.connect(os.environ["DATABASE_URL"])
     conn.autocommit = True
     return conn
@@ -73,33 +75,41 @@ class UserCreate(BaseModel):
 def get_session_user(request: Request):
     token = request.cookies.get("session")
     if not token: return None
-    conn = get_db(); cur = conn.cursor(cursor_factory=RealDictCursor)
-    cur.execute("""
-        SELECT u.id, u.username, u.email, u.created_at
-        FROM sessions s JOIN users u ON u.id = s.user_id
-        WHERE s.token_hash = %s AND s.expires_at > NOW()
-    """, (hash_token(token),))
-    user = cur.fetchone()
-    cur.close(); conn.close()
-    return dict(user) if user else None
+    try:
+        conn = get_db(); cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur.execute("""
+            SELECT u.id, u.username, u.email, u.created_at
+            FROM sessions s JOIN users u ON u.id = s.user_id
+            WHERE s.token_hash = %s AND s.expires_at > NOW()
+        """, (hash_token(token),))
+        user = cur.fetchone()
+        cur.close(); conn.close()
+        return dict(user) if user else None
+    except:
+        return None
 
 def require_api_key(x_api_key: str = Header(None)):
     if not x_api_key or not x_api_key.startswith("AYK_"):
         raise HTTPException(status_code=401, detail="Missing or invalid API key format")
-    conn = get_db(); cur = conn.cursor(cursor_factory=RealDictCursor)
-    cur.execute("SELECT * FROM api_keys WHERE key_hash = %s", (hash_api_key(x_api_key),))
-    key = cur.fetchone()
-    if not key:
-        cur.close(); conn.close(); raise HTTPException(status_code=401, detail="API key not found")
-    if key["status"] != "active":
-        cur.close(); conn.close(); raise HTTPException(status_code=403, detail="API key has been revoked")
-    if key["expires_at"] and key["expires_at"] < datetime.now():
-        cur.close(); conn.close(); raise HTTPException(status_code=403, detail="API key expired")
-    if key["requests_used"] >= key["quota_limit"]:
-        cur.close(); conn.close(); raise HTTPException(status_code=429, detail="API key quota exceeded")
-    cur.execute("UPDATE api_keys SET requests_used = requests_used + 1 WHERE id = %s", (key["id"],))
-    cur.close(); conn.close()
-    return dict(key)
+    try:
+        conn = get_db(); cur = conn.cursor(cursor_factory=RealDictCursor)
+        cur.execute("SELECT * FROM api_keys WHERE key_hash = %s", (hash_api_key(x_api_key),))
+        key = cur.fetchone()
+        if not key:
+            cur.close(); conn.close(); raise HTTPException(status_code=401, detail="API key not found")
+        if key["status"] != "active":
+            cur.close(); conn.close(); raise HTTPException(status_code=403, detail="API key has been revoked")
+        if key["expires_at"] and key["expires_at"] < datetime.now():
+            cur.close(); conn.close(); raise HTTPException(status_code=403, detail="API key expired")
+        if key["requests_used"] >= key["quota_limit"]:
+            cur.close(); conn.close(); raise HTTPException(status_code=429, detail="API key quota exceeded")
+        cur.execute("UPDATE api_keys SET requests_used = requests_used + 1 WHERE id = %s", (key["id"],))
+        cur.close(); conn.close()
+        return dict(key)
+    except HTTPException as he:
+        raise he
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Database Error: {str(e)}")
 
 def api_success(data, message="Request successful", status_code=200):
     return JSONResponse(status_code=status_code, content={
@@ -114,7 +124,7 @@ def api_error(status_code, code, message):
     })
 
 # ==========================================
-# RUTE API LENGKAP 
+# RUTE API (Format: /api/...)
 # ==========================================
 
 @app.get("/api/health")
