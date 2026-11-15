@@ -115,8 +115,7 @@ async function handleAuthSubmit(e) {
         try {
             data = JSON.parse(textData);
         } catch (err) {
-            // Jika server crash dan mengembalikan HTML (bukan JSON)
-            data = { success: false, message: "SERVER CRASH. Cek Log Vercel! (" + textData.substring(0, 80) + ")" };
+            data = { success: false, message: "SERVER CRASH. Cek Log Vercel! (" + textData.substring(0, 50) + ")" };
         }
 
         if (data.success) {
