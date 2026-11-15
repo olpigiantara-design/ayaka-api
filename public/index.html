@@ -591,10 +591,22 @@ module.exports = async (req, res) => {
             <div id="auth-modal-title" class="text-2xl font-extrabold">Login</div>
             <div id="auth-error" class="hidden p-3 bg-rose-100 text-rose-800 border-2 border-rose-800 rounded-xl text-sm font-bold"></div>
             <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-4">
-                <div><label class="block text-xs font-bold uppercase mb-1">Username / Email</label><input type="text" id="auth-email" required class="neobrutal-input w-full p-2.5 rounded-xl text-sm" placeholder="username"></div>
-                <div><label class="block text-xs font-bold uppercase mb-1">Password</label><input type="password" id="auth-password" required class="neobrutal-input w-full p-2.5 rounded-xl text-sm" placeholder="••••••••"></div>
-                <button type="submit" id="auth-submit-btn" class="neobrutal-btn w-full py-3 rounded-xl font-bold">Continue</button>
-                <div class="text-center mt-2"><button type="button" onclick="openAuthModal(authMode === 'login' ? 'register' : 'login')" class="text-sm text-ayakaPrimary hover:underline">Switch to Register</button></div>
+                <div id="auth-group-username" class="hidden">
+                    <label class="block text-xs font-bold uppercase mb-1">Username</label>
+                    <input type="text" id="auth-username" class="neobrutal-input w-full p-2.5 rounded-xl text-sm" placeholder="username">
+                </div>
+                <div>
+                    <label id="auth-label-email" class="block text-xs font-bold uppercase mb-1">Username / Email</label>
+                    <input type="text" id="auth-email" required class="neobrutal-input w-full p-2.5 rounded-xl text-sm" placeholder="username or email">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase mb-1">Password</label>
+                    <input type="password" id="auth-password" required class="neobrutal-input w-full p-2.5 rounded-xl text-sm" placeholder="••••••••">
+                </div>
+                <button type="submit" id="auth-submit-btn" class="neobrutal-btn w-full py-3 rounded-xl font-bold">Login</button>
+                <div class="text-center mt-2">
+                    <button type="button" onclick="toggleAuthMode()" id="auth-switch-btn" class="text-sm text-ayakaPrimary hover:underline">Belum punya akun? Register</button>
+                </div>
             </form>
         </div>
     </div>
