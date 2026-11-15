@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AYAKA API — Official REST API Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: { ayakaBg: '#F4F8FF', ayakaPrimary: '#245BDB', ayakaDark: '#142D63', ayakaLight: '#DCEAFF', ayakaText: '#17233D', ayakaBorder: '#17233D' },
+                    fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-ayakaBg text-ayakaText antialiased flex flex-col min-h-screen">
+
+    <!-- NAVBAR -->
+    <header class="sticky top-0 z-40 bg-[#F4F8FF]/95 backdrop-blur-md border-b-4 border-ayakaBorder px-4 lg:px-12 py-3">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <a href="#" onclick="switchTab('home')" class="w-10 h-10 bg-ayakaPrimary border-2 border-ayakaBorder flex items-center justify-center text-white font-extrabold shadow-[3px_3px_0px_#17233D] flex-shrink-0">
+                    <i data-lucide="terminal" class="w-5 h-5"></i>
+                </a>
+                <div class="flex flex-col">
+                    <a href="#" onclick="switchTab('home')" class="text-xl font-extrabold tracking-tight text-ayakaDark leading-none hover:text-ayakaPrimary transition-colors">AYAKA API</a>
+                    <span class="block text-[10px] font-bold text-ayakaPrimary uppercase tracking-widest leading-none mt-1">v1.4.2 • REST Platform</span>
+                    
+                    <!-- REALTIME WIDGETS -->
+                    <div class="flex flex-wrap items-center gap-1 mt-1.5 text-[9px] font-bold text-ayakaDark">
+                        <div class="neobrutal-card px-1.5 py-0.5 bg-white flex items-center gap-1 border-2 border-ayakaBorder shadow-[1px_1px_0px_#17233D]">
+                            <i data-lucide="clock" class="w-2.5 h-2.5 text-ayakaPrimary"></i> <span id="rt-time">--:--:--</span>
+                        </div>
+                        <div class="neobrutal-card px-1.5 py-0.5 bg-white flex items-center gap-1 border-2 border-ayakaBorder shadow-[1px_1px_0px_#17233D]">
+                            <i data-lucide="calendar" class="w-2.5 h-2.5 text-ayakaPrimary"></i> <span id="rt-date">--/--/----</span>
+                        </div>
+                        <div id="rt-battery-container" class="neobrutal-card px-1.5 py-0.5 bg-white flex items-center gap-1 border-2 border-ayakaBorder shadow-[1px_1px_0px_#17233D]">
+                            <i data-lucide="battery" id="rt-battery-icon" class="w-2.5 h-2.5 text-ayakaPrimary"></i> <span id="rt-battery">--%</span>
+                        </div>
+                        <div class="neobrutal-card px-1.5 py-0.5 bg-white flex items-center gap-1 border-2 border-ayakaBorder shadow-[1px_1px_0px_#17233D]">
+                            <i data-lucide="activity" class="w-2.5 h-2.5 text-emerald-500"></i> <span id="rt-uptime">--d</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <nav class="hidden xl:flex items-center gap-5 font-semibold text-sm">
+                <button onclick="switchTab('home')" class="hover:text-ayakaPrimary">Home</button>
+                <button onclick="switchTab('docs')" class="hover:text-ayakaPrimary">Documentation</button>
+                <button onclick="switchTab('explorer')" class="hover:text-ayakaPrimary">API Explorer</button>
+                <button onclick="switchTab('pricing')" class="hover:text-ayakaPrimary">API Pricing</button>
+                <button onclick="switchTab('status')" class="hover:text-ayakaPrimary">Status</button>
+                <button onclick="switchTab('backend')" class="hover:text-ayakaPrimary">Backend & Vercel</button>
+            </nav>
+
+            <div class="hidden lg:flex items-center gap-3">
+                <button onclick="switchTab('dashboard')" id="nav-dash-btn" class="neobrutal-btn-secondary px-3 py-1.5 text-xs rounded-lg hidden flex items-center gap-1">
+                    <i data-lucide="layout-dashboard" class="w-3 h-3"></i> Dashboard
+                </button>
+                <button onclick="openAuthModal('login')" id="nav-auth-btn" class="neobrutal-btn px-3 py-1.5 text-xs rounded-lg">
+                    Login / Register
+                </button>
+            </div>
+
+            <button onclick="toggleMobileMenu()" class="lg:hidden p-2 neobrutal-card rounded-lg ml-2">
+                <i data-lucide="menu" class="w-5 h-5"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- MOBILE SIDEBAR -->
+    <div id="mobile-sidebar-backdrop" class="fixed inset-0 bg-black/50 z-40 hidden transition-opacity opacity-0" onclick="toggleMobileMenu()"></div>
+    <div id="mobile-sidebar" class="fixed top-0 right-0 w-[300px] h-full bg-ayakaBg border-l-4 border-ayakaBorder z-50 transform translate-x-full transition-transform duration-300 flex flex-col p-6 shadow-2xl">
+        <div class="flex items-center justify-between pb-4 border-b-2 border-ayakaBorder mb-6">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-ayakaPrimary border-2 border-ayakaBorder flex items-center justify-center text-white font-bold">
+                    <i data-lucide="terminal" class="w-4 h-4"></i>
+                </div>
+                <span class="font-extrabold text-lg">AYAKA API</span>
+            </div>
+            <button onclick="toggleMobileMenu()" class="p-2 neobrutal-card rounded-lg">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <div class="flex flex-col gap-3 font-bold text-sm overflow-y-auto flex-1 pr-1">
+            <div class="text-xs uppercase text-gray-500 font-extrabold tracking-wider mt-1">Main Menu</div>
+            <button onclick="switchTab('home'); toggleMobileMenu();" class="flex items-center gap-3 p-3 rounded-xl neobrutal-card text-left bg-white">
+                <i data-lucide="home" class="w-5 h-5 text-ayakaPrimary"></i> Home
+            </button>
+            <button onclick="switchTab('docs'); toggleMobileMenu();" class="flex items-center gap-3 p-3 rounded-xl neobrutal-card text-left bg-white">
+                <i data-lucide="book-open" class="w-5 h-5 text-ayakaPrimary"></i> Documentation
+            </button>
+            <button onclick="switchTab('explorer'); toggleMobileMenu();" class="flex items-center gap-3 p-3 rounded-xl neobrutal-card text-left bg-white">
+                <i data-lucide="play" class="w-5 h-5 text-ayakaPrimary"></i> API Explorer
+            </button>
+
+            <div class="text-xs uppercase text-gray-500 font-extrabold tracking-wider mt-3">Platform & Cloud</div>
+            <button onclick="switchTab('pricing'); toggleMobileMenu();" class="flex items-center gap-3 p-3 rounded-xl neobrutal-card text-left bg-white">
+                <i data-lucide="credit-card" class="w-5 h-5 text-ayakaPrimary"></i> API Pricing
+            </button>
+            <button onclick="switchTab('status'); toggleMobileMenu();" class="flex items-center gap-3 p-3 rounded-xl neobrutal-card text-left bg-white">
+                <i data-lucide="activity" class="w-5 h-5 text-ayakaPrimary"></i> Status & Health
+            </button>
+            <button onclick="switchTab('backend'); toggleMobileMenu();" class="flex items-center gap-3 p-3 rounded-xl neobrutal-card text-left bg-white">
+                <i data-lucide="code" class="w-5 h-5 text-ayakaPrimary"></i> Backend & Vercel
+            </button>
+
+            <div class="text-xs uppercase text-gray-500 font-extrabold tracking-wider mt-3">Workspace</div>
+            <button onclick="switchTab('dashboard'); toggleMobileMenu();" class="flex items-center gap-3 p-3 rounded-xl neobrutal-card text-left bg-ayakaLight border-2 border-ayakaBorder">
+                <i data-lucide="layout-dashboard" class="w-5 h-5 text-ayakaPrimary"></i> Dashboard
+            </button>
+        </div>
+
+        <div class="pt-4 border-t-2 border-ayakaBorder flex flex-col gap-2 mt-auto">
+            <button onclick="openAuthModal('login'); toggleMobileMenu();" class="neobrutal-btn-secondary w-full py-3 rounded-xl text-center text-sm font-bold">
+                Login / Register
+            </button>
+            <button onclick="switchTab('explorer'); toggleMobileMenu();" class="neobrutal-btn w-full py-3 rounded-xl text-center text-sm font-bold">
+                Get Started Free
+            </button>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 lg:px-12 py-8">
+
+        <!-- TAB 1: HOME -->
+        <section id="tab-home" class="tab-content space-y-16">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center reveal">
+                <div class="lg:col-span-7 space-y-6">
+                    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-ayakaLight border-2 border-ayakaBorder text-xs font-extrabold uppercase tracking-wider shadow-[2px_2px_0px_#17233D]">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span> OFFICIAL REST API PLATFORM
+                    </div>
+                    <h1 class="text-4xl lg:text-6xl font-extrabold tracking-tight text-ayakaDark leading-tight">
+                        Build Something Amazing With <span class="text-ayakaPrimary underline decoration-wavy decoration-2">AYAKA API</span>.
+                    </h1>
+                    <p class="text-lg text-gray-700 font-medium leading-relaxed">Powerful, Fast, Secure, and Developer-Friendly REST API Platform designed with robust Node.js backend architecture and Vercel serverless integration.</p>
+                    <div class="flex flex-wrap gap-4 pt-2">
+                        <button onclick="openAuthModal('login')" class="neobrutal-btn px-6 py-3.5 rounded-xl text-base flex items-center gap-2">Get Started <i data-lucide="arrow-right" class="w-5 h-5"></i></button>
+                        <button onclick="switchTab('docs')" class="neobrutal-btn-secondary px-6 py-3.5 rounded-xl text-base flex items-center gap-2">Explore Docs <i data-lucide="book" class="w-5 h-5"></i></button>
+                    </div>
+                </div>
+                <div class="lg:col-span-5">
+                    <div class="neobrutal-card p-6 rounded-2xl bg-white space-y-6">
+                        <div class="flex items-center justify-between border-b-2 border-ayakaBorder pb-4">
+                            <span class="font-extrabold text-sm uppercase tracking-wider">System Telemetry</span>
+                            <span class="px-2.5 py-1 bg-emerald-100 text-emerald-800 border-2 border-emerald-800 text-xs font-bold rounded-md">Live</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="p-4 rounded-xl bg-ayakaBg border-2 border-ayakaBorder">
+                                <div class="text-xs font-bold text-gray-500 uppercase">Total Requests</div>
+                                <div class="text-2xl font-extrabold text-ayakaPrimary mt-1" id="home-live-req">0</div>
+                            </div>
+                            <div class="p-4 rounded-xl bg-ayakaBg border-2 border-ayakaBorder">
+                                <div class="text-xs font-bold text-gray-500 uppercase">Avg Response</div>
+                                <div class="text-2xl font-extrabold text-ayakaDark mt-1">42ms</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-8 reveal">
+                <div class="border-b-4 border-ayakaBorder pb-4">
+                    <h2 class="text-2xl lg:text-3xl font-extrabold text-ayakaDark">Understanding API & REST Architecture</h2>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="neobrutal-card p-6 rounded-2xl bg-white space-y-4">
+                        <div class="w-12 h-12 bg-ayakaLight border-2 border-ayakaBorder rounded-xl flex items-center justify-center text-ayakaPrimary font-bold"><i data-lucide="cpu" class="w-6 h-6"></i></div>
+                        <h3 class="text-xl font-extrabold">What is an API?</h3>
+                        <p class="text-gray-700 text-sm leading-relaxed"><strong>API (Application Programming Interface)</strong> is an interface that allows two software applications to communicate. Examples: Weather App, Payment Gateway.</p>
+                        <div class="p-3 bg-ayakaBg border-2 border-ayakaBorder rounded-xl font-mono text-xs font-bold text-ayakaDark">Client → API Gateway → Backend Server → JSON Response</div>
+                    </div>
+                    <div class="neobrutal-card p-6 rounded-2xl bg-white space-y-4">
+                        <div class="w-12 h-12 bg-ayakaLight border-2 border-ayakaBorder rounded-xl flex items-center justify-center text-ayakaPrimary font-bold"><i data-lucide="globe" class="w-6 h-6"></i></div>
+                        <h3 class="text-xl font-extrabold">What is a REST API?</h3>
+                        <p class="text-gray-700 text-sm leading-relaxed"><strong>REST API</strong> is an architectural style using HTTP methods, URLs, JSON payloads, and stateless communication.</p>
+                        <div class="p-3 bg-ayakaBg border-2 border-ayakaBorder rounded-xl font-mono text-xs font-bold text-ayakaPrimary">GET /api/v1/users | POST /api/v1/users</div>
+                    </div>
+                </div>
+
+                <div class="neobrutal-card rounded-2xl bg-white overflow-hidden">
+                    <div class="p-5 bg-ayakaDark text-white font-extrabold text-lg flex items-center justify-between"><span>API vs REST API Comparison</span><span class="text-xs bg-ayakaPrimary px-3 py-1 rounded-md border border-white">Architecture</span></div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead><tr class="border-b-3 border-ayakaBorder bg-ayakaLight font-extrabold"><th class="p-4 border-r-2 border-ayakaBorder">Feature</th><th class="p-4 border-r-2 border-ayakaBorder">General API</th><th class="p-4">REST API</th></tr></thead>
+                            <tbody class="divide-y-2 divide-ayakaBorder font-medium">
+                                <tr><td class="p-4 font-bold border-r-2 border-ayakaBorder bg-ayakaBg">Definition</td><td class="p-4 border-r-2 border-ayakaBorder">General communication interface</td><td class="p-4">API adhering to REST constraints</td></tr>
+                                <tr><td class="p-4 font-bold border-r-2 border-ayakaBorder bg-ayakaBg">Protocol</td><td class="p-4 border-r-2 border-ayakaBorder">Any protocol (TCP, SOAP, UDP)</td><td class="p-4">Primarily HTTP / HTTPS</td></tr>
+                                <tr><td class="p-4 font-bold border-r-2 border-ayakaBorder bg-ayakaBg">Data Format</td><td class="p-4 border-r-2 border-ayakaBorder">XML, JSON, Binary</td><td class="p-4">Standard JSON format</td></tr>
+                                <tr><td class="p-4 font-bold border-r-2 border-ayakaBorder bg-ayakaBg">State</td><td class="p-4 border-r-2 border-ayakaBorder">Stateful or Stateless</td><td class="p-4">Strictly Stateless</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="space-y-6 reveal">
+                <div class="border-b-4 border-ayakaBorder pb-4"><h2 class="text-2xl lg:text-3xl font-extrabold text-ayakaDark">Standard HTTP Methods</h2></div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <div class="neobrutal-card p-5 rounded-xl bg-white space-y-3"><span class="px-3 py-1 bg-emerald-100 text-emerald-800 border-2 border-emerald-800 font-extrabold text-xs rounded-md">GET</span><h3 class="font-extrabold">Retrieve Data</h3><p class="text-xs text-gray-600">Fetch records without modifying state.</p></div>
+                    <div class="neobrutal-card p-5 rounded-xl bg-white space-y-3"><span class="px-3 py-1 bg-blue-100 text-blue-800 border-2 border-blue-800 font-extrabold text-xs rounded-md">POST</span><h3 class="font-extrabold">Create Record</h3><p class="text-xs text-gray-600">Submit new resource data.</p></div>
+                    <div class="neobrutal-card p-5 rounded-xl bg-white space-y-3"><span class="px-3 py-1 bg-amber-100 text-amber-800 border-2 border-amber-800 font-extrabold text-xs rounded-md">PUT</span><h3 class="font-extrabold">Full Update</h3><p class="text-xs text-gray-600">Replace entire existing resource.</p></div>
+                    <div class="neobrutal-card p-5 rounded-xl bg-white space-y-3"><span class="px-3 py-1 bg-purple-100 text-purple-800 border-2 border-purple-800 font-extrabold text-xs rounded-md">PATCH</span><h3 class="font-extrabold">Partial Update</h3><p class="text-xs text-gray-600">Modify specific fields.</p></div>
+                    <div class="neobrutal-card p-5 rounded-xl bg-white space-y-3"><span class="px-3 py-1 bg-rose-100 text-rose-800 border-2 border-rose-800 font-extrabold text-xs rounded-md">DELETE</span><h3 class="font-extrabold">Remove Record</h3><p class="text-xs text-gray-600">Permanently delete resource.</p></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 2: DOCUMENTATION -->
+        <section id="tab-docs" class="tab-content hidden space-y-8">
+            <div><button onclick="switchTab('home')" class="inline-flex items-center gap-2 text-sm font-bold text-ayakaPrimary hover:text-ayakaDark transition-colors"><i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Home</button></div>
+            <div class="border-b-4 border-ayakaBorder pb-4"><h2 class="text-3xl font-extrabold text-ayakaDark">API Documentation</h2></div>
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div class="lg:col-span-3 space-y-2">
+                    <div class="neobrutal-card p-4 rounded-xl bg-white space-y-1 sticky top-24 font-bold text-sm">
+                        <div class="text-xs uppercase text-gray-400 mb-2 font-extrabold tracking-wider">Getting Started</div>
+                        <a href="#doc-intro" class="block p-2 rounded-lg hover:bg-ayakaLight transition-colors">1. Introduction</a>
+                        <a href="#doc-baseurl" class="block p-2 rounded-lg hover:bg-ayakaLight transition-colors">2. Base URL</a>
+                        <a href="#doc-auth" class="block p-2 rounded-lg hover:bg-ayakaLight transition-colors">3. Authentication</a>
+                        <div class="text-xs uppercase text-gray-400 mt-4 mb-2 font-extrabold tracking-wider">Endpoints</div>
+                        <a href="#doc-health" class="block p-2 rounded-lg hover:bg-ayakaLight transition-colors">4. Health Check</a>
+                        <a href="#doc-users" class="block p-2 rounded-lg hover:bg-ayakaLight transition-colors">5. Users CRUD</a>
+                        <a href="#doc-errors" class="block p-2 rounded-lg hover:bg-ayakaLight transition-colors">6. Error Codes</a>
+                    </div>
+                </div>
+                <div class="lg:col-span-9 space-y-8">
+                    <div id="doc-intro" class="neobrutal-card p-6 rounded-2xl bg-white space-y-4">
+                        <h3 class="text-xl font-extrabold text-ayakaDark">1. Introduction</h3>
+                        <p class="text-gray-700 text-sm leading-relaxed">AYAKA API provides enterprise-grade RESTful endpoints designed for high concurrency, reliable database persistence via PostgreSQL, and secure API Key validation.</p>
+                    </div>
+                    <div id="doc-baseurl" class="neobrutal-card p-6 rounded-2xl bg-white space-y-4">
+                        <h3 class="text-xl font-extrabold text-ayakaDark">2. Base URL</h3>
+                        <p class="text-gray-700 text-sm">All API requests must be directed to the production Vercel deployment URL:</p>
+                        <div class="p-3 bg-ayakaBg border-2 border-ayakaBorder rounded-xl font-mono text-xs font-bold text-ayakaPrimary">https://your-domain.vercel.app/api/v1</div>
+                    </div>
+                    <div id="doc-auth" class="neobrutal-card p-6 rounded-2xl bg-white space-y-4">
+                        <h3 class="text-xl font-extrabold text-ayakaDark">3. Authentication (API Key)</h3>
+                        <p class="text-gray-700 text-sm">Include your unique API Key with the <code class="bg-ayakaLight px-1.5 py-0.5 rounded border border-ayakaBorder">x-api-key</code> header in every request.</p>
+                        <div class="bg-ayakaDark text-white p-4 rounded-xl font-mono text-xs space-y-1 overflow-x-auto">
+                            <span class="text-gray-400"># Example cURL Request</span>
+                            <p>curl -X GET "https://your-domain.vercel.app/api/v1/users" \</p>
+                            <p class="text-ayakaLight">-H "x-api-key: AYK_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"</p>
+                        </div>
+                    </div>
+                    <div id="doc-health" class="neobrutal-card p-6 rounded-2xl bg-white space-y-4">
+                        <h3 class="text-xl font-extrabold text-ayakaDark">4. Health Check Endpoint</h3>
+                        <div class="inline-block px-2.5 py-1 bg-emerald-100 text-emerald-800 border-2 border-emerald-800 text-xs font-bold rounded">GET /api/v1/health</div>
+                        <p class="text-gray-700 text-sm">Returns server status and database connectivity timestamp.</p>
+                    </div>
+                    <div id="doc-users" class="neobrutal-card p-6 rounded-2xl bg-white space-y-4">
+                        <h3 class="text-xl font-extrabold text-ayakaDark">5. Users API Endpoints</h3>
+                        <div class="space-y-2 text-sm">
+                            <div class="p-3 bg-ayakaBg border-2 border-ayakaBorder rounded-xl flex items-center justify-between"><span class="font-bold font-mono">GET /api/v1/users</span><span class="text-xs bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded border border-emerald-800 font-bold">List Users</span></div>
+                            <div class="p-3 bg-ayakaBg border-2 border-ayakaBorder rounded-xl flex items-center justify-between"><span class="font-bold font-mono">POST /api/v1/users</span><span class="text-xs bg-blue-100 text-blue-800 px-2 py-0.5 rounded border border-blue-800 font-bold">Create User</span></div>
+                            <div class="p-3 bg-ayakaBg border-2 border-ayakaBorder rounded-xl flex items-center justify-between"><span class="font-bold font-mono">PUT /api/v1/users/:id</span><span class="text-xs bg-amber-100 text-amber-800 px-2 py-0.5 rounded border border-amber-800 font-bold">Update User</span></div>
+                            <div class="p-3 bg-ayakaBg border-2 border-ayakaBorder rounded-xl flex items-center justify-between"><span class="font-bold font-mono">DELETE /api/v1/users/:id</span><span class="text-xs bg-rose-100 text-rose-800 px-2 py-0.5 rounded border border-rose-800 font-bold">Delete User</span></div>
+                        </div>
+                    </div>
+                    <div id="doc-errors" class="neobrutal-card p-6 rounded-2xl bg-white space-y-4">
+                        <h3 class="text-xl font-extrabold text-ayakaDark">6. Error Codes</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse text-sm">
+                                <thead><tr class="border-b-2 border-ayakaBorder bg-ayakaLight font-extrabold"><th class="p-3 border-r-2 border-ayakaBorder">HTTP Code</th><th class="p-3">Description</th></tr></thead>
+                                <tbody class="divide-y-2 divide-ayakaBorder font-medium">
+                                    <tr><td class="p-3 border-r-2 border-ayakaBorder font-mono">200 OK</td><td class="p-3">Request successful</td></tr>
+                                    <tr><td class="p-3 border-r-2 border-ayakaBorder font-mono">201 Created</td><td class="p-3">Resource successfully created</td></tr>
+                                    <tr><td class="p-3 border-r-2 border-ayakaBorder font-mono">400 Bad Request</td><td class="p-3">Malformed request syntax</td></tr>
+                                    <tr><td class="p-3 border-r-2 border-ayakaBorder font-mono">401 Unauthorized</td><td class="p-3">Missing or invalid API Key</td></tr>
+                                    <tr><td class="p-3 border-r-2 border-ayakaBorder font-mono">429 Too Many Requests</td><td class="p-3">Rate limit exceeded</td></tr>
+                                    <tr><td class="p-3 border-r-2 border-ayakaBorder font-mono">500 Server Error</td><td class="p-3">Internal system failure</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: EXPLORER -->
+        <section id="tab-explorer" class="tab-content hidden space-y-8">
+            <div><button onclick="switchTab('home')" class="inline-flex items-center gap-2 text-sm font-bold text-ayakaPrimary hover:text-ayakaDark transition-colors mb-4"><i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Home</button></div>
+            <div class="border-b-4 border-ayakaBorder pb-4"><h2 class="text-3xl font-extrabold text-ayakaDark">Interactive API Explorer</h2></div>
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div class="lg:col-span-6 space-y-6">
+                    <div class="neobrutal-card p-6 rounded-2xl bg-white space-y-4">
+                        <div class="grid grid-cols-3 gap-3">
+                            <div><label class="block text-xs font-bold uppercase mb-1">Method</label><select id="explorer-method" class="neobrutal-input w-full p-2.5 rounded-xl font-bold text-sm"><option>GET</option><option>POST</option><option>DELETE</option></select></div>
+                            <div class="col-span-2"><label class="block text-xs font-bold uppercase mb-1">URL</label><input type="text" id="explorer-url" value="/api/v1/users" class="neobrutal-input w-full p-2.5 rounded-xl font-mono text-sm"></div>
+                        </div>
+                        <div><label class="block text-xs font-bold uppercase mb-1">API Key</label><input type="password" id="explorer-apikey" placeholder="AYK_..." class="neobrutal-input w-full p-2.5 rounded-xl font-mono text-sm"></div>
+                        <div><label class="block text-xs font-bold uppercase mb-1">Body (JSON)</label><textarea id="explorer-body" rows="3" class="neobrutal-input w-full p-2.5 rounded-xl font-mono text-xs">{"name": "User", "email": "user@test.com"}</textarea></div>
+                        <button onclick="runApiExplorer()" id="btn-send-req" class="neobrutal-btn w-full py-3 rounded-xl flex justify-center items-center gap-2"><i data-lucide="play" class="w-4 h-4"></i> Send Request</button>
+                    </div>
+                </div>
+                <div class="lg:col-span-6 space-y-6">
+                    <div class="neobrutal-card p-6 rounded-2xl bg-white space-y-4 h-full flex flex-col">
+                        <div class="flex items-center justify-between border-b-2 border-ayakaBorder pb-3"><h3 class="text-lg font-extrabold">Response</h3><div id="response-status-badge" class="px-2.5 py-1 bg-gray-100 text-gray-800 border-2 border-gray-400 font-bold text-xs rounded">Ready</div></div>
+                        <div class="flex items-center gap-4 text-xs font-bold text-gray-600"><span>Status: <strong id="res-code" class="text-ayakaDark">-</strong></span><span>Time: <strong id="res-time" class="text-ayakaPrimary">-</strong></span></div>
+                        <pre id="explorer-response-output" class="w-full h-64 bg-ayakaDark text-emerald-400 p-4 rounded-xl font-mono text-xs overflow-auto border-2 border-ayakaBorder">Waiting for request...</pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: PRICING -->
+        <section id="tab-pricing" class="tab-content hidden space-y-8">
+            <div><button onclick="switchTab('home')" class="inline-flex items-center gap-2 text-sm font-bold text-ayakaPrimary hover:text-ayakaDark transition-colors mb-4"><i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Home</button></div>
+            <div class="text-center max-w-2xl mx-auto space-y-3">
+                <h2 class="text-3xl font-extrabold text-ayakaDark">Flexible API Pricing Plans</h2>
+                <p class="text-gray-600 font-medium">Scale your applications with predictable usage quotas and robust infrastructure.</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 pt-4">
+                <div class="neobrutal-card p-6 rounded-2xl bg-white flex flex-col justify-between space-y-6">
+                    <div class="space-y-4">
+                        <span class="px-3 py-1 bg-ayakaLight text-ayakaDark border-2 border-ayakaBorder text-xs font-extrabold rounded">STARTER</span>
+                        <h3 class="text-2xl font-extrabold">Free Plan</h3>
+                        <div class="text-3xl font-extrabold">$0 <span class="text-sm text-gray-500 font-medium">/ month</span></div>
+                        <p class="text-xs text-gray-600">Ideal for personal testing, hobby projects, and learning.</p>
+                        <ul class="space-y-2.5 text-sm font-medium">
+                            <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600"></i> 10,000 Requests / month</li>
+                            <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600"></i> Standard Endpoints</li>
+                            <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600"></i> Community Support</li>
+                        </ul>
+                    </div>
+                    <button onclick="switchTab('explorer')" class="neobrutal-btn-secondary w-full py-3 rounded-xl">Get Started Free</button>
+                </div>
+                <div class="neobrutal-card p-6 rounded-2xl bg-ayakaLight border-4 border-ayakaBorder flex flex-col justify-between space-y-6 relative">
+                    <span class="absolute -top-3 right-6 bg-ayakaPrimary text-white text-xs px-3 py-1 rounded-full font-extrabold border-2 border-ayakaBorder shadow-[2px_2px_0px_#17233D]">POPULAR</span>
+                    <div class="space-y-4">
+                        <span class="px-3 py-1 bg-white text-ayakaDark border-2 border-ayakaBorder text-xs font-extrabold rounded">DEVELOPER</span>
+                        <h3 class="text-2xl font-extrabold">Pro Plan</h3>
+                        <div class="text-3xl font-extrabold">$29 <span class="text-sm text-gray-500 font-medium">/ month</span></div>
+                        <p class="text-xs text-gray-600">Built for production apps and growing developer teams.</p>
+                        <ul class="space-y-2.5 text-sm font-medium">
+                            <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600"></i> 500,000 Requests / month</li>
+                            <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600"></i> Priority Response Time</li>
+                            <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600"></i> Advanced Analytics</li>
+                        </ul>
+                    </div>
+                    <button onclick="openAuthModal('login')" class="neobrutal-btn w-full py-3 rounded-xl">Upgrade to Pro</button>
+                </div>
+                <div class="neobrutal-card p-6 rounded-2xl bg-white flex flex-col justify-between space-y-6">
+                    <div class="space-y-4">
+                        <span class="px-3 py-1 bg-ayakaLight text-ayakaDark border-2 border-ayakaBorder text-xs font-extrabold rounded">ENTERPRISE</span>
+                        <h3 class="text-2xl font-extrabold">Business Plan</h3>
+                        <div class="text-3xl font-extrabold">$99 <span class="text-sm text-gray-500 font-medium">/ month</span></div>
+                        <p class="text-xs text-gray-600">Unlimited scale with dedicated infrastructure support.</p>
+                        <ul class="space-y-2.5 text-sm font-medium">
+                            <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600"></i> Unlimited Requests</li>
+                            <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600"></i> Dedicated Support 24/7</li>
+                            <li class="flex items-center gap-2"><i data-lucide="check" class="w-4 h-4 text-emerald-600"></i> Custom SLA Integration</li>
+                        </ul>
+                    </div>
+                    <button onclick="alert('Silakan hubungi tim sales kami di sales@ayaka-api.com')" class="neobrutal-btn-secondary w-full py-3 rounded-xl">Contact Sales</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 5: STATUS (TAMPILAN DIKEMBALIKAN SEPERTI SS) -->
+        <section id="tab-status" class="tab-content hidden space-y-8">
+            <div>
+                <button onclick="switchTab('home')" class="inline-flex items-center gap-2 text-sm font-bold text-ayakaPrimary hover:text-ayakaDark transition-colors mb-4">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Home
+                </button>
+            </div>
+            
+            <div class="border-b-4 border-ayakaBorder pb-4">
+                <h2 class="text-3xl lg:text-4xl font-extrabold text-ayakaDark">System Status & Health</h2>
+                <p class="text-gray-600 font-medium mt-2">Real-time operational status of AYAKA API infrastructure.</p>
+            </div>
+
+            <!-- Global Status Banner -->
+            <div class="neobrutal-card p-6 md:p-8 rounded-2xl bg-emerald-50 border-emerald-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                <div class="flex items-center gap-4">
+                    <div class="relative flex h-4 w-4">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-4 w-4 bg-emerald-500"></span>
+                    </div>
+                    <div>
+                        <h3 class="font-extrabold text-2xl text-emerald-900 leading-tight">All Systems Operational</h3>
+                        <p class="text-sm text-emerald-700 font-medium mt-1">100% functional across all serverless regions.</p>
+                    </div>
+                </div>
+                <div class="px-4 py-2 bg-emerald-200 border-2 border-emerald-800 font-extrabold text-sm rounded-lg text-emerald-900 whitespace-nowrap shadow-[2px_2px_0px_#17233D]">
+                    99.98% Uptime
+                </div>
+            </div>
+
+            <!-- Individual Status Cards -->
+            <div class="grid grid-cols-1 gap-6">
+                <!-- API Gateway -->
+                <div class="neobrutal-card p-6 rounded-2xl bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h4 class="font-extrabold text-lg text-ayakaDark">API Gateway</h4>
+                        <p class="text-sm text-gray-500 font-medium mt-1">Response Latency: <span id="status-res-time" class="text-ayakaPrimary font-bold">...</span></p>
+                    </div>
+                    <div class="flex items-center gap-2 text-emerald-600 font-bold" id="status-api-icon">
+                        <i data-lucide="check-circle" class="w-6 h-6"></i> <span id="status-api" class="text-sm">CHECKING</span>
+                    </div>
+                </div>
+
+                <!-- Database -->
+                <div class="neobrutal-card p-6 rounded-2xl bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h4 class="font-extrabold text-lg text-ayakaDark">PostgreSQL Database</h4>
+                        <p class="text-sm text-gray-500 font-medium mt-1">Connection Pool: Optimal</p>
+                    </div>
+                    <div class="flex items-center gap-2 text-emerald-600 font-bold" id="status-db-icon">
+                        <i data-lucide="check-circle" class="w-6 h-6"></i> <span id="status-db" class="text-sm">CHECKING</span>
+                    </div>
+                </div>
+
+                <!-- Auth Service -->
+                <div class="neobrutal-card p-6 rounded-2xl bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h4 class="font-extrabold text-lg text-ayakaDark">Auth & API Key Service</h4>
+                        <p class="text-sm text-gray-500 font-medium mt-1">SHA-256 Verification: Active</p>
+                    </div>
+                    <div class="flex items-center gap-2 text-emerald-600 font-bold" id="status-auth-icon">
+                        <i data-lucide="check-circle" class="w-6 h-6"></i> <span id="status-auth" class="text-sm">CHECKING</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 6: BACKEND & VERCEL -->
+        <section id="tab-backend" class="tab-content hidden space-y-8">
+            <div><button onclick="switchTab('home')" class="inline-flex items-center gap-2 text-sm font-bold text-ayakaPrimary hover:text-ayakaDark transition-colors mb-4"><i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Home</button></div>
+            <div class="border-b-4 border-ayakaBorder pb-4">
+                <h2 class="text-3xl font-extrabold text-ayakaDark">Backend & Vercel Code Architecture</h2>
+                <p class="text-gray-600 font-medium mt-1">Complete production Node.js/Express serverless handlers and PostgreSQL schema.</p>
+            </div>
+            <div class="neobrutal-card p-6 rounded-2xl bg-white space-y-4">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b-2 border-ayakaBorder pb-4 gap-4">
+                    <span class="font-extrabold text-lg font-mono text-ayakaPrimary">/api/v1/users.js (Vercel Serverless Function)</span>
+                    <button onclick="copyCodeSnippet('code-backend')" class="neobrutal-btn-secondary px-4 py-2 text-sm rounded-lg whitespace-nowrap self-start sm:self-auto">Copy Code</button>
+                </div>
+                <div class="bg-[#0F172A] p-4 rounded-xl border-2 border-ayakaBorder overflow-x-auto">
+                    <pre id="code-backend" class="text-emerald-400 font-mono text-xs leading-relaxed">const { Pool } = require('pg');
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+
+module.exports = async (req, res) => {
+    const apiKey = req.headers['x-api-key'];
+    if (!apiKey || !apiKey.startsWith('AYK_')) {
+        return res.status(401).json({ success: false, message: 'Unauthorized API Key' });
+    }
+
+    if (req.method === 'GET') {
+        try {
+            const { rows } = await pool.query('SELECT id, username, email FROM users LIMIT 50');
+            return res.status(200).json({ success: true, data: rows });
+        } catch (err) {
+            return res.status(500).json({ success: false, error: err.message });
+        }
+    }
+    return res.status(405).json({ success: false, message: 'Method Not Allowed' });
+};</pre>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 7: DASHBOARD -->
+        <section id="tab-dashboard" class="tab-content hidden space-y-8">
+            <div>
+                <button onclick="switchTab('home')" class="inline-flex items-center gap-2 text-sm font-bold text-ayakaPrimary hover:text-ayakaDark transition-colors mb-4">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Home
+                </button>
+            </div>
+            
+            <div class="flex flex-col md:flex-row md:items-start justify-between border-b-4 border-ayakaBorder pb-6 gap-6">
+                <div class="flex-1">
+                    <h2 class="text-3xl lg:text-5xl font-extrabold text-ayakaDark leading-tight">Developer<br>Dashboard</h2>
+                    <p class="text-gray-600 font-medium mt-3 text-sm">Manage API Keys, monitor quota limits, and analyze request logs.</p>
+                    <p class="text-sm text-gray-500 mt-1">Welcome back, <span id="dash-username" class="font-bold text-ayakaPrimary">...</span></p>
+                </div>
+                <div class="flex items-center gap-4 self-start mt-2">
+                    <button onclick="generateApiKey()" class="neobrutal-btn px-5 py-3 rounded-xl text-sm flex items-center gap-2 whitespace-nowrap">
+                        <i data-lucide="plus" class="w-5 h-5"></i> Generate New Key
+                    </button>
+                    <button onclick="logout()" class="text-sm font-bold text-rose-600 hover:underline px-2">Logout</button>
+                </div>
+            </div>
+
+            <div id="dash-content" class="hidden space-y-6">
+                <!-- Stats Grid (Bertumpuk ke bawah / 1 kolom agar sama seperti SS) -->
+                <div class="grid grid-cols-1 gap-6">
+                    <div class="neobrutal-card p-6 rounded-xl bg-white flex flex-col justify-center">
+                        <div class="text-xs font-extrabold text-gray-500 uppercase tracking-widest mb-2">Remaining Quota</div>
+                        <div class="text-4xl font-extrabold text-ayakaPrimary flex items-baseline gap-1" id="stat-quota">
+                            0 <span class="text-xl text-gray-500 font-bold">/ 10k</span>
+                        </div>
+                    </div>
+                    <div class="neobrutal-card p-6 rounded-xl bg-white flex flex-col justify-center">
+                        <div class="text-xs font-extrabold text-gray-500 uppercase tracking-widest mb-2">Successful Requests</div>
+                        <div class="text-4xl font-extrabold text-emerald-600" id="stat-success-req">0</div>
+                    </div>
+                    <div class="neobrutal-card p-6 rounded-xl bg-white flex flex-col justify-center">
+                        <div class="text-xs font-extrabold text-gray-500 uppercase tracking-widest mb-2">Failed Requests</div>
+                        <div class="text-4xl font-extrabold text-rose-600" id="stat-failed-req">0</div>
+                    </div>
+                    <div class="neobrutal-card p-6 rounded-xl bg-white flex flex-col justify-center">
+                        <div class="text-xs font-extrabold text-gray-500 uppercase tracking-widest mb-2">Active API Keys</div>
+                        <div class="text-4xl font-extrabold text-ayakaDark" id="stat-active-keys">0</div>
+                    </div>
+                </div>
+
+                <!-- Table -->
+                <div class="neobrutal-card p-6 rounded-2xl bg-white space-y-4">
+                    <h3 class="font-extrabold text-2xl text-ayakaDark">Your API Keys</h3>
+                    <div class="overflow-x-auto border-2 border-ayakaBorder">
+                        <table class="w-full text-left border-collapse text-sm">
+                            <thead>
+                                <tr class="bg-ayakaLight border-b-2 border-ayakaBorder font-extrabold text-ayakaDark">
+                                    <th class="p-4 border-r-2 border-ayakaBorder w-1/3">Key Prefix</th>
+                                    <th class="p-4 border-r-2 border-ayakaBorder w-1/3 text-center">Status</th>
+                                    <th class="p-4 w-1/3 text-right">Created At</th>
+                                </tr>
+                            </thead>
+                            <tbody id="api-keys-table-body" class="divide-y-2 divide-ayakaBorder font-medium">
+                                <!-- JS populates this -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Chart -->
+                <div class="neobrutal-card p-6 rounded-2xl bg-white space-y-4">
+                    <h3 class="font-extrabold text-2xl text-ayakaDark">API Request Traffic (Last 7 Days)</h3>
+                    <div class="h-80 w-full pt-4">
+                        <canvas id="trafficChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="bg-ayakaDark text-white border-t-4 border-ayakaBorder mt-20 py-12 px-4 lg:px-12">
+        <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div class="space-y-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-ayakaPrimary border-2 border-white flex items-center justify-center text-white font-bold"><i data-lucide="terminal" class="w-4 h-4"></i></div>
+                    <span class="font-extrabold text-lg">AYAKA API</span>
+                </div>
+                <p class="text-xs text-gray-300 font-medium">Enterprise REST API platform powered by Node.js, PostgreSQL, and Vercel Serverless.</p>
+            </div>
+            <div>
+                <h4 class="font-extrabold mb-3 text-sm uppercase tracking-wider text-ayakaLight">Resources</h4>
+                <ul class="space-y-2 text-xs text-gray-300 font-medium">
+                    <li><button onclick="switchTab('docs')" class="hover:underline">Documentation</button></li>
+                    <li><button onclick="switchTab('explorer')" class="hover:underline">API Explorer</button></li>
+                    <li><button onclick="switchTab('pricing')" class="hover:underline">Pricing Plans</button></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-extrabold mb-3 text-sm uppercase tracking-wider text-ayakaLight">Architecture</h4>
+                <ul class="space-y-2 text-xs text-gray-300 font-medium">
+                    <li><button onclick="switchTab('backend')" class="hover:underline">Node.js Express</button></li>
+                    <li><button onclick="switchTab('backend')" class="hover:underline">PostgreSQL Schema</button></li>
+                    <li><button onclick="switchTab('status')" class="hover:underline">System Status</button></li>
+                </ul>
+            </div>
+            <div>
+                <h4 class="font-extrabold mb-3 text-sm uppercase tracking-wider text-ayakaLight">Legal & Security</h4>
+                <ul class="space-y-2 text-xs text-gray-300 font-medium">
+                    <li><a href="#" class="hover:underline">Privacy Policy</a></li>
+                    <li><a href="#" class="hover:underline">Terms of Service</a></li>
+                    <li><a href="#" class="hover:underline">Security Compliance</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="max-w-7xl mx-auto border-t border-gray-700 mt-8 pt-6 text-center text-xs text-gray-400 font-medium">
+            © 2026 AYAKA API Platform. All rights reserved. Built with Neo-Brutalism design.
+        </div>
+    </footer>
+
+    <!-- MODAL AUTH -->
+    <div id="auth-modal" class="fixed inset-0 bg-black/50 z-50 hidden flex items-center justify-center p-4">
+        <div class="neobrutal-card bg-white p-6 rounded-2xl max-w-md w-full space-y-6 relative">
+            <button onclick="closeAuthModal()" class="absolute top-4 right-4 p-2 rounded-lg neobrutal-card"><i data-lucide="x" class="w-4 h-4"></i></button>
+            <div id="auth-modal-title" class="text-2xl font-extrabold">Login</div>
+            <div id="auth-error" class="hidden p-3 bg-rose-100 text-rose-800 border-2 border-rose-800 rounded-xl text-sm font-bold"></div>
+            <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-4">
+                <div><label class="block text-xs font-bold uppercase mb-1">Username / Email</label><input type="text" id="auth-email" required class="neobrutal-input w-full p-2.5 rounded-xl text-sm" placeholder="username"></div>
+                <div><label class="block text-xs font-bold uppercase mb-1">Password</label><input type="password" id="auth-password" required class="neobrutal-input w-full p-2.5 rounded-xl text-sm" placeholder="••••••••"></div>
+                <button type="submit" id="auth-submit-btn" class="neobrutal-btn w-full py-3 rounded-xl font-bold">Continue</button>
+                <div class="text-center mt-2"><button type="button" onclick="openAuthModal(authMode === 'login' ? 'register' : 'login')" class="text-sm text-ayakaPrimary hover:underline">Switch to Register</button></div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/js/app.js"></script>
+</body>
+</html>

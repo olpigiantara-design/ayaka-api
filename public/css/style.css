@@ -1,0 +1,68 @@
+body {
+    background-color: #F4F8FF;
+    color: #17233D;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    overflow-x: hidden;
+}
+.neobrutal-card {
+    background-color: #FFFFFF;
+    border: 3px solid #17233D;
+    box-shadow: 5px 5px 0px #17233D;
+    transition: all 0.2s ease;
+}
+.neobrutal-card:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 7px 7px 0px #17233D;
+}
+.neobrutal-btn {
+    background-color: #245BDB;
+    color: #FFFFFF;
+    border: 3px solid #17233D;
+    box-shadow: 4px 4px 0px #17233D;
+    font-weight: 700;
+    transition: all 0.15s ease;
+    cursor: pointer;
+}
+.neobrutal-btn:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0px #17233D;
+    background-color: #1d4cd8;
+}
+.neobrutal-btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0px #17233D;
+}
+.neobrutal-btn-secondary {
+    background-color: #FFFFFF;
+    color: #17233D;
+    border: 3px solid #17233D;
+    box-shadow: 4px 4px 0px #17233D;
+    font-weight: 700;
+    transition: all 0.15s ease;
+    cursor: pointer;
+}
+.neobrutal-btn-secondary:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0px #17233D;
+    background-color: #DCEAFF;
+}
+.neobrutal-input {
+    border: 3px solid #17233D;
+    box-shadow: 3px 3px 0px #17233D;
+    background-color: #FFFFFF;
+    transition: all 0.2s ease;
+}
+.neobrutal-input:focus {
+    outline: none;
+    box-shadow: 4px 4px 0px #245BDB;
+    border-color: #245BDB;
+}
+.reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.8s ease, transform 0.8s ease;
+}
+.reveal.active {
+    opacity: 1;
+    transform: translateY(0);
+}
