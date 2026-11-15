@@ -25,6 +25,7 @@
     <!-- NAVBAR -->
     <header class="sticky top-0 z-40 bg-[#F4F8FF]/95 backdrop-blur-md border-b-4 border-ayakaBorder px-4 lg:px-12 py-3">
         <div class="max-w-7xl mx-auto flex items-center justify-between">
+            
             <div class="flex items-center gap-3">
                 <a href="#" onclick="switchTab('home')" class="w-10 h-10 bg-ayakaPrimary border-2 border-ayakaBorder flex items-center justify-center text-white font-extrabold shadow-[3px_3px_0px_#17233D] flex-shrink-0">
                     <i data-lucide="terminal" class="w-5 h-5"></i>
@@ -51,6 +52,7 @@
                 </div>
             </div>
 
+            <!-- Desktop Menu -->
             <nav class="hidden xl:flex items-center gap-5 font-semibold text-sm">
                 <button onclick="switchTab('home')" class="hover:text-ayakaPrimary">Home</button>
                 <button onclick="switchTab('docs')" class="hover:text-ayakaPrimary">Documentation</button>
@@ -60,11 +62,12 @@
                 <button onclick="switchTab('backend')" class="hover:text-ayakaPrimary">Backend & Vercel</button>
             </nav>
 
+            <!-- Desktop Action Buttons (DISEMBUNYIKAN SEMENTARA) -->
             <div class="hidden lg:flex items-center gap-3">
-                <button onclick="switchTab('dashboard')" id="nav-dash-btn" class="neobrutal-btn-secondary px-3 py-1.5 text-xs rounded-lg hidden flex items-center gap-1">
+                <button onclick="switchTab('dashboard')" id="nav-dash-btn" class="hidden neobrutal-btn-secondary px-3 py-1.5 text-xs rounded-lg flex items-center gap-1">
                     <i data-lucide="layout-dashboard" class="w-3 h-3"></i> Dashboard
                 </button>
-                <button onclick="openAuthModal('login')" id="nav-auth-btn" class="neobrutal-btn px-3 py-1.5 text-xs rounded-lg">
+                <button onclick="openAuthModal('login')" id="nav-auth-btn" class="hidden neobrutal-btn px-3 py-1.5 text-xs rounded-lg">
                     Login / Register
                 </button>
             </div>
@@ -113,18 +116,17 @@
                 <i data-lucide="code" class="w-5 h-5 text-ayakaPrimary"></i> Backend & Vercel
             </button>
 
-            <div class="text-xs uppercase text-gray-500 font-extrabold tracking-wider mt-3">Workspace</div>
-            <button onclick="switchTab('dashboard'); toggleMobileMenu();" class="flex items-center gap-3 p-3 rounded-xl neobrutal-card text-left bg-ayakaLight border-2 border-ayakaBorder">
+            <!-- Workspace (DISEMBUNYIKAN SEMENTARA) -->
+            <div class="text-xs uppercase text-gray-500 font-extrabold tracking-wider mt-3 hidden">Workspace</div>
+            <button onclick="switchTab('dashboard'); toggleMobileMenu();" class="hidden flex items-center gap-3 p-3 rounded-xl neobrutal-card text-left bg-ayakaLight border-2 border-ayakaBorder">
                 <i data-lucide="layout-dashboard" class="w-5 h-5 text-ayakaPrimary"></i> Dashboard
             </button>
         </div>
 
-        <div class="pt-4 border-t-2 border-ayakaBorder flex flex-col gap-2 mt-auto">
-            <button onclick="openAuthModal('login'); toggleMobileMenu();" class="neobrutal-btn-secondary w-full py-3 rounded-xl text-center text-sm font-bold">
+        <!-- Login Button Mobile (DISEMBUNYIKAN SEMENTARA) -->
+        <div class="pt-4 border-t-2 border-ayakaBorder flex flex-col gap-2 mt-auto hidden">
+            <button onclick="openAuthModal('login'); toggleMobileMenu();" class="hidden neobrutal-btn-secondary w-full py-3 rounded-xl text-center text-sm font-bold">
                 Login / Register
-            </button>
-            <button onclick="switchTab('explorer'); toggleMobileMenu();" class="neobrutal-btn w-full py-3 rounded-xl text-center text-sm font-bold">
-                Get Started Free
             </button>
         </div>
     </div>
@@ -144,7 +146,7 @@
                     </h1>
                     <p class="text-lg text-gray-700 font-medium leading-relaxed">Powerful, Fast, Secure, and Developer-Friendly REST API Platform designed with robust Node.js backend architecture and Vercel serverless integration.</p>
                     <div class="flex flex-wrap gap-4 pt-2">
-                        <button onclick="openAuthModal('login')" class="neobrutal-btn px-6 py-3.5 rounded-xl text-base flex items-center gap-2">Get Started <i data-lucide="arrow-right" class="w-5 h-5"></i></button>
+                        <button onclick="switchTab('explorer')" class="neobrutal-btn px-6 py-3.5 rounded-xl text-base flex items-center gap-2">Get Started <i data-lucide="arrow-right" class="w-5 h-5"></i></button>
                         <button onclick="switchTab('docs')" class="neobrutal-btn-secondary px-6 py-3.5 rounded-xl text-base flex items-center gap-2">Explore Docs <i data-lucide="book" class="w-5 h-5"></i></button>
                     </div>
                 </div>
@@ -365,70 +367,15 @@
             </div>
         </section>
 
-        <!-- TAB 5: STATUS (TAMPILAN DIKEMBALIKAN SEPERTI SS) -->
+        <!-- TAB 5: STATUS -->
         <section id="tab-status" class="tab-content hidden space-y-8">
-            <div>
-                <button onclick="switchTab('home')" class="inline-flex items-center gap-2 text-sm font-bold text-ayakaPrimary hover:text-ayakaDark transition-colors mb-4">
-                    <i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Home
-                </button>
-            </div>
-            
-            <div class="border-b-4 border-ayakaBorder pb-4">
-                <h2 class="text-3xl lg:text-4xl font-extrabold text-ayakaDark">System Status & Health</h2>
-                <p class="text-gray-600 font-medium mt-2">Real-time operational status of AYAKA API infrastructure.</p>
-            </div>
-
-            <!-- Global Status Banner -->
-            <div class="neobrutal-card p-6 md:p-8 rounded-2xl bg-emerald-50 border-emerald-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-                <div class="flex items-center gap-4">
-                    <div class="relative flex h-4 w-4">
-                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span class="relative inline-flex rounded-full h-4 w-4 bg-emerald-500"></span>
-                    </div>
-                    <div>
-                        <h3 class="font-extrabold text-2xl text-emerald-900 leading-tight">All Systems Operational</h3>
-                        <p class="text-sm text-emerald-700 font-medium mt-1">100% functional across all serverless regions.</p>
-                    </div>
-                </div>
-                <div class="px-4 py-2 bg-emerald-200 border-2 border-emerald-800 font-extrabold text-sm rounded-lg text-emerald-900 whitespace-nowrap shadow-[2px_2px_0px_#17233D]">
-                    99.98% Uptime
-                </div>
-            </div>
-
-            <!-- Individual Status Cards -->
-            <div class="grid grid-cols-1 gap-6">
-                <!-- API Gateway -->
-                <div class="neobrutal-card p-6 rounded-2xl bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                        <h4 class="font-extrabold text-lg text-ayakaDark">API Gateway</h4>
-                        <p class="text-sm text-gray-500 font-medium mt-1">Response Latency: <span id="status-res-time" class="text-ayakaPrimary font-bold">...</span></p>
-                    </div>
-                    <div class="flex items-center gap-2 text-emerald-600 font-bold" id="status-api-icon">
-                        <i data-lucide="check-circle" class="w-6 h-6"></i> <span id="status-api" class="text-sm">CHECKING</span>
-                    </div>
-                </div>
-
-                <!-- Database -->
-                <div class="neobrutal-card p-6 rounded-2xl bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                        <h4 class="font-extrabold text-lg text-ayakaDark">PostgreSQL Database</h4>
-                        <p class="text-sm text-gray-500 font-medium mt-1">Connection Pool: Optimal</p>
-                    </div>
-                    <div class="flex items-center gap-2 text-emerald-600 font-bold" id="status-db-icon">
-                        <i data-lucide="check-circle" class="w-6 h-6"></i> <span id="status-db" class="text-sm">CHECKING</span>
-                    </div>
-                </div>
-
-                <!-- Auth Service -->
-                <div class="neobrutal-card p-6 rounded-2xl bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                        <h4 class="font-extrabold text-lg text-ayakaDark">Auth & API Key Service</h4>
-                        <p class="text-sm text-gray-500 font-medium mt-1">SHA-256 Verification: Active</p>
-                    </div>
-                    <div class="flex items-center gap-2 text-emerald-600 font-bold" id="status-auth-icon">
-                        <i data-lucide="check-circle" class="w-6 h-6"></i> <span id="status-auth" class="text-sm">CHECKING</span>
-                    </div>
-                </div>
+            <div><button onclick="switchTab('home')" class="inline-flex items-center gap-2 text-sm font-bold text-ayakaPrimary hover:text-ayakaDark transition-colors mb-4"><i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Home</button></div>
+            <div class="border-b-4 border-ayakaBorder pb-4"><h2 class="text-3xl font-extrabold text-ayakaDark">System Status & Health</h2></div>
+            <div class="neobrutal-card p-6 rounded-2xl bg-white space-y-4">
+                <div class="flex justify-between border-b pb-2"><span class="font-bold">API Gateway</span><span id="status-api" class="font-bold text-emerald-600">CHECKING</span></div>
+                <div class="flex justify-between border-b pb-2"><span class="font-bold">Database PostgreSQL</span><span id="status-db" class="font-bold text-emerald-600">CHECKING</span></div>
+                <div class="flex justify-between border-b pb-2"><span class="font-bold">Auth Service</span><span id="status-auth" class="font-bold text-emerald-600">CHECKING</span></div>
+                <div class="flex justify-between"><span class="font-bold">Avg Response</span><span id="status-res-time" class="font-bold text-ayakaPrimary">...</span></div>
             </div>
         </section>
 
